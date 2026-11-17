@@ -1,0 +1,7 @@
+bin/
+obj/
+.vs/
+*.user
+pzdiscordbot.conf
+pzbot.env
+pzbot.log
