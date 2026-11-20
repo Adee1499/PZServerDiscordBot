@@ -9,7 +9,14 @@ The bot connects to the panel's console WebSocket, forwards your command, and re
 | Command | Description |
 |---|---|
 | `/pz <command>` | Send a console command (e.g. `players`, `servermsg "Restart in 5"`, `save`) and get the output. Only works in the configured command channel. |
-| `/pz-status` | Show the server power state and whether the bot is connected to the console. |
+| `/pz-status` | Show the server power state, console connection and any pending restart. |
+| `/pz-restart [minutes] [reason]` | Restart the server now or after a countdown. Players are warned in game at 15/10/5/2/1 minutes; Discord is notified when the restart starts and when the server is back online. |
+| `/pz-restart-cancel` | Cancel a pending restart. |
+| `/pz-mods` | List tracked Workshop mods and when they were last updated. |
+
+## Automatic restarts on mod updates
+
+Every `ModCheckIntervalMinutes` the bot reads `WorkshopItems=` from the server's `.ini` (via the panel file API) and checks each item's last-update time on Steam. When a mod is updated it posts an embed to the notify channel and, if `AutoRestartOnModUpdate` is on, schedules a restart after `ModUpdateRestartDelayMinutes` with in-game countdown messages. Last-seen timestamps are stored in `pzbot-state.json` in the working directory (`/data` in Docker) — mount it so a bot restart doesn't lose state.
 
 ## Requirements
 
@@ -30,6 +37,11 @@ Settings are read from `pzdiscordbot.conf` (JSON, created on first run in the wo
 | `ServerId` | `PTERODACTYL_SERVER_ID` | Server identifier |
 | `GuildId` | `DISCORD_GUILD_ID` | Discord guild ID the commands are registered to |
 | `CommandChannelId` | `DISCORD_COMMAND_CHANNEL_ID` | Channel where `/pz` may be used |
+| `NotifyChannelId` | `DISCORD_NOTIFY_CHANNEL_ID` | Channel for restart/mod-update notifications (defaults to the command channel) |
+| `ZomboidIniPath` | `ZOMBOID_INI_PATH` | Server ini path inside the container (default `/.cache/Server/Pterodactyl.ini`) |
+| `ModCheckIntervalMinutes` | `MOD_CHECK_INTERVAL_MINUTES` | How often to check Steam for mod updates (default `10`) |
+| `ModUpdateRestartDelayMinutes` | `MOD_UPDATE_RESTART_DELAY_MINUTES` | Countdown before restarting after a mod update (default `15`) |
+| `AutoRestartOnModUpdate` | `AUTO_RESTART_ON_MOD_UPDATE` | Restart automatically when a mod updates (default `true`) |
 | `ResponseTimeoutSeconds` | — | Max time to wait for console output (default `5`) |
 | `ResponseQuietPeriodSeconds` | — | Stop collecting once the console has been silent this long (default `1`) |
 

@@ -19,12 +19,16 @@ await using var console = new PterodactylConsole(settings.PanelUrl, settings.Ser
 
 var client = new DiscordSocketClient(new DiscordSocketConfig { GatewayIntents = GatewayIntents.Guilds });
 var interactions = new InteractionService(client);
+var restarter = new ServerRestarter(console, client, settings);
+var mods = new ModUpdateWatcher(console, restarter, settings);
 
 var services = new ServiceCollection()
     .AddSingleton(settings)
     .AddSingleton(console)
     .AddSingleton(client)
     .AddSingleton(interactions)
+    .AddSingleton(restarter)
+    .AddSingleton(mods)
     .BuildServiceProvider();
 
 client.Log += Log;
@@ -48,10 +52,13 @@ await client.LoginAsync(TokenType.Bot, settings.DiscordBotToken);
 await client.StartAsync();
 
 var shutdown = new TaskCompletionSource();
+var lifetime = new CancellationTokenSource();
+_ = mods.StartAsync(lifetime.Token);
 Console.CancelKeyPress += (_, e) => { e.Cancel = true; shutdown.TrySetResult(); };
 AppDomain.CurrentDomain.ProcessExit += (_, _) => shutdown.TrySetResult();
 await shutdown.Task;
 
+lifetime.Cancel();
 await client.StopAsync();
 return 0;
 

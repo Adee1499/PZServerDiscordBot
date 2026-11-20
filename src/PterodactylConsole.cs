@@ -39,6 +39,32 @@ public sealed partial class PterodactylConsole : IAsyncDisposable
         return Task.CompletedTask;
     }
 
+    public async Task PowerAsync(string signal, CancellationToken ct = default)
+    {
+        using var response = await http.PostAsJsonAsync("power", new { signal }, ct);
+        if (!response.IsSuccessStatusCode)
+            throw new InvalidOperationException($"Power signal '{signal}' failed: {(int)response.StatusCode} {response.ReasonPhrase}.");
+    }
+
+    public async Task<string> ReadFileAsync(string path, CancellationToken ct = default)
+    {
+        using var response = await http.GetAsync($"files/contents?file={Uri.EscapeDataString(path)}", ct);
+        if (!response.IsSuccessStatusCode)
+            throw new InvalidOperationException($"Reading '{path}' failed: {(int)response.StatusCode} {response.ReasonPhrase}.");
+        return await response.Content.ReadAsStringAsync(ct);
+    }
+
+    public async Task<bool> WaitForStateAsync(string state, TimeSpan timeout, CancellationToken ct = default)
+    {
+        var deadline = DateTime.UtcNow + timeout;
+        while (DateTime.UtcNow < deadline)
+        {
+            if (PowerState == state) return true;
+            await Task.Delay(1000, ct);
+        }
+        return PowerState == state;
+    }
+
     public async Task<IReadOnlyList<string>> SendCommandAsync(string command, TimeSpan timeout, TimeSpan quietPeriod, CancellationToken ct = default)
     {
         if (!IsConnected)

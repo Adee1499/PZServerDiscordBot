@@ -5,3 +5,4 @@ obj/
 pzdiscordbot.conf
 pzbot.env
 pzbot.log
+pzbot-state.json

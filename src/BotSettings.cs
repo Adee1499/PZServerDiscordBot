@@ -15,9 +15,15 @@ public sealed class BotSettings
     public ulong  CommandChannelId  { get; set; }
     public double ResponseTimeoutSeconds   { get; set; } = 5;
     public double ResponseQuietPeriodSeconds { get; set; } = 1;
+    public ulong  NotifyChannelId          { get; set; }
+    public string ZomboidIniPath           { get; set; } = "/.cache/Server/Pterodactyl.ini";
+    public int    ModCheckIntervalMinutes  { get; set; } = 10;
+    public int    ModUpdateRestartDelayMinutes { get; set; } = 15;
+    public bool   AutoRestartOnModUpdate   { get; set; } = true;
 
     [JsonIgnore] public TimeSpan ResponseTimeout     => TimeSpan.FromSeconds(ResponseTimeoutSeconds);
     [JsonIgnore] public TimeSpan ResponseQuietPeriod => TimeSpan.FromSeconds(ResponseQuietPeriodSeconds);
+    [JsonIgnore] public ulong EffectiveNotifyChannelId => NotifyChannelId != 0 ? NotifyChannelId : CommandChannelId;
 
     private static readonly JsonSerializerOptions jsonOptions = new() { WriteIndented = true };
 
@@ -42,6 +48,16 @@ public sealed class BotSettings
             settings.GuildId = guildId;
         if (ulong.TryParse(Environment.GetEnvironmentVariable("DISCORD_COMMAND_CHANNEL_ID"), out var channelId))
             settings.CommandChannelId = channelId;
+        if (ulong.TryParse(Environment.GetEnvironmentVariable("DISCORD_NOTIFY_CHANNEL_ID"), out var notifyId))
+            settings.NotifyChannelId = notifyId;
+
+        settings.ZomboidIniPath = Env("ZOMBOID_INI_PATH", settings.ZomboidIniPath);
+        if (int.TryParse(Environment.GetEnvironmentVariable("MOD_CHECK_INTERVAL_MINUTES"), out var interval))
+            settings.ModCheckIntervalMinutes = interval;
+        if (int.TryParse(Environment.GetEnvironmentVariable("MOD_UPDATE_RESTART_DELAY_MINUTES"), out var delay))
+            settings.ModUpdateRestartDelayMinutes = delay;
+        if (bool.TryParse(Environment.GetEnvironmentVariable("AUTO_RESTART_ON_MOD_UPDATE"), out var auto))
+            settings.AutoRestartOnModUpdate = auto;
 
         return settings;
     }
